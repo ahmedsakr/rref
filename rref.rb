@@ -4,10 +4,20 @@ class MatrixRow
     @numbers = row.split(' ').map(&:to_i)
   end
 
-  def add!(operand)
-    @numbers.map! do |num|
-      num + operand
+  def add_with_row(row, multiplier)
+    return if row.length != length
+
+    @numbers = @numbers.zip(row.values).map do |num, num2|
+      num + (multiplier * num2.to_f)
     end
+  end
+
+  def length
+    @numbers.length
+  end
+
+  def values
+    @numbers
   end
 
   def value(index)
@@ -41,13 +51,26 @@ class Matrix
     @rows[column].value(column) == 1
   end
 
+  def add_rows(target_row, reference_row, multiplier)
+    @rows[target_row].add_with_row(@rows[reference_row], multiplier)
+  end
+
+  def value_at(row, column)
+    @rows[row].value(column)
+  end
+
   def normalize_pivot!(column)
     @rows[column].normalize!(column)
+  end
+  def dimension
+    @rows.length
   end
   def print
     @rows.each do |row|
       print_row(row)
     end
+
+    puts
   end
 end
 
@@ -62,18 +85,38 @@ class RREFSolver
     @matrix.is_normalized?(@current_pivot_column)
   end
 
-  def clear_out_row
-    #tbd
+  def at_pivot?
+    @current_working_row == @current_pivot_column
   end
+
+  def clear_out_row
+    multiplier = -(@matrix.value_at(@current_working_row, @current_pivot_column))
+    @matrix.add_rows(@current_working_row, @current_pivot_column, multiplier)
+  end
+
   def iterate
     if not is_pivot_normalized?
       @matrix.normalize_pivot!(@current_pivot_column)
-    else
+      @matrix.print
+      iterate
+      return
+    elsif not at_pivot?
       clear_out_row
     end
 
-    @current_working_row += 1
     @matrix.print
+
+    @current_working_row += 1
+    if @current_working_row >= @matrix.dimension
+      if @current_pivot_column == @matrix.dimension - 1
+        return
+      end
+
+      @current_working_row = 0
+      @current_pivot_column += 1
+    end
+
+    iterate
   end
 end
 
