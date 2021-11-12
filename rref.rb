@@ -1,5 +1,7 @@
 
 class MatrixRow
+  @@precision = 2
+
   def initialize(row)
     @numbers = row.split(' ').map(&:to_i)
   end
@@ -8,7 +10,7 @@ class MatrixRow
     return if row.length != length
 
     @numbers = @numbers.zip(row.values).map do |num, num2|
-      num + (multiplier * num2.to_f)
+      (num + (multiplier * num2.to_f)).round(@@precision)
     end
   end
 
@@ -27,7 +29,7 @@ class MatrixRow
   def normalize!(pivot_index)
     pivot = @numbers[pivot_index]
     @numbers.map! do |num|
-      num.to_f / pivot
+      (num.to_f / pivot).round(@@precision)
     end
   end
 
@@ -94,6 +96,20 @@ class RREFSolver
     @matrix.add_rows(@current_working_row, @current_pivot_column, multiplier)
   end
 
+  def is_matrix_in_rref
+    @current_working_row += 1
+    if @current_working_row >= @matrix.dimension
+      if @current_pivot_column == @matrix.dimension - 1
+        return true
+      end
+
+      @current_working_row = 0
+      @current_pivot_column += 1
+    end
+
+    return false
+  end
+
   def iterate
     if not is_pivot_normalized?
       @matrix.normalize_pivot!(@current_pivot_column)
@@ -105,18 +121,7 @@ class RREFSolver
     end
 
     @matrix.print
-
-    @current_working_row += 1
-    if @current_working_row >= @matrix.dimension
-      if @current_pivot_column == @matrix.dimension - 1
-        return
-      end
-
-      @current_working_row = 0
-      @current_pivot_column += 1
-    end
-
-    iterate
+    iterate unless is_matrix_in_rref
   end
 end
 
